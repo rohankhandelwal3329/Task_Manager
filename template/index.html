@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <!-- Import Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Basic styling for the body */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        /* Container styling */
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Header styling */
+        h1 {
+            text-align: center;
+            color: #007bff;
+        }
+
+        /* Form styling */
+        form {
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        textarea,
+        input[type="datetime-local"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 6px;
+            margin-bottom: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #000000;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #000000;
+        }
+
+        /* Table styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #151313;
+            text-align: left;
+        }
+
+        th {
+            background-color: #e79f03;
+        }
+
+        a {
+            color: #315a86;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* Task row styling */
+        .task-row {
+            display: flex;
+            align-items: center;
+        }
+
+        .task-actions {
+            display: flex;
+            align-items: center;
+        }
+
+        .task-action {
+            margin-right: 10px;
+        }
+        
+        .delete-icon {
+            color: #ff0000;
+            cursor: pointer;
+        }
+
+        .delete-icon:hover {
+            color: #cc0000;
+        }
+
+        .delete-icon i {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Task Manager</h1>
+        <!-- Form for adding a new task -->
+        <form action="/add" method="POST">
+            {{ form.csrf_token() }}
+            <div>
+                <label for="title">Title:</label>
+                <input type="text" id="title" name="title" required>
+            </div>
+            <div>
+                <label for="description">Description:</label>
+                <textarea id="description" name="description"></textarea>
+            </div>
+            <div>
+                <label for="datetime">Due Time:</label>
+                <input type="datetime-local" id="datetime" name="datetime" required>
+            </div>
+            <button type="submit">Add Task</button>
+        </form>
+        <hr>
+        <h2>Tasks</h2>
+        <!-- Table displaying tasks -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th>Due Time</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in tasks %}
+                <tr>
+                    <td>{{ task.title }}</td>
+                    <td>{{ task.description }}</td>
+                    <td>{{ task.due_time }}</td>
+                    <td class="task-actions">
+                        <!-- Form to mark task as complete/incomplete -->
+                        <form action="/complete/{{ task.id }}" method="POST" style="margin: 0;">
+                            {{ form.csrf_token }}
+                            <input type="checkbox" name="completed" class="task-action" {% if task.completed %}checked{% endif %} onChange="this.form.submit()">
+                        </form>
+                        <!-- Edit task button -->
+                        <a href="#" class="task-action" id="edit-task-{{ task.id }}" onclick="editTask({{ task.id }}); return false;"><i class="fas fa-edit"></i></a>
+                        <!-- Delete task button -->
+                        <a href="/delete/{{ task.id }}" class="task-action delete-icon"><i class="fas fa-trash-alt"></i></a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div> 
+
+    <!-- Container for the edit task form -->
+    <div id="editTaskFormContainer"></div>
+    <script>
+        function editTask(taskId) {
+            // Fetch task data and populate the edit form
+            fetch('/edit/' + taskId)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('editTaskFormContainer').innerHTML = `
+                        <form id="editTaskForm" action="/edit/${taskId}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="id" value="${data.id}">
+                            <div class="form-group">
+                                <label for="editTitle">Title</label>
+                                <input type="text" class="form-control" id="editTitle" name="title" value="${data.title}">
+                            </div>
+                            <div class="form-group">
+                                <label for="editDescription">Description</label>
+                                <textarea class="form-control" id="editDescription" name="description">${data.description}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="editDueTime">Due Time</label>
+                                <input type="datetime-local" class="form-control" id="editDueTime" name="datetime" value="${data.due_time}">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Update</button>
+                        </form>
+                    `;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while loading task details');
+                });
+        }
+    </script>
+</body>
+</html>

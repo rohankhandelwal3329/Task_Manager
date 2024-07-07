@@ -16,3 +16,6 @@ A simple web-based task manager application built with Flask and SQLite.
 - Flask-WTF
 - Flask-SQLAlchemy
 - python-dotenv
+
+# Installation:
+1. Clone the repository:

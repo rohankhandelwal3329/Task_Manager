@@ -19,7 +19,7 @@ A simple web-based task manager application built with Flask and SQLite.
 
 # Installation:
 # 1. Clone the repository:
-- git clone https://github.com/rohankhandelwal3329/task-manager.git
+- git clone https://github.com/rohankhandelwal3329/task_manager.git
 - cd task-manager
 
 # 2. Install the dependencies:
